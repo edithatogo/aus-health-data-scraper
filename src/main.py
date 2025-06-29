@@ -44,8 +44,8 @@ def main():
     # ------------------------------------------------------------------
     # 3️⃣  Processing
     # ------------------------------------------------------------------
-    process_items(items_raw_dir, processed_dir / "items.csv")
-    process_participants(participants_raw_dir, processed_dir / "participants.csv")
+    process_items(items_raw_dir, processed_dir)
+    process_participants(participants_raw_dir, processed_dir)
 
 if __name__ == "__main__":
     main()

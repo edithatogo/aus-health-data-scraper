@@ -1,4 +1,3 @@
-
 import pytest
 from pathlib import Path
 import pandas as pd
@@ -11,54 +10,34 @@ def temp_output_dir(tmp_path):
 
 def test_process_items(temp_output_dir):
     fixture_path = Path("tests/fixtures/sample_item.html")
-    output_csv = temp_output_dir / "items.csv"
+    
+    # Create a temporary directory for the fixture to simulate the input_dir for process_items
+    temp_fixture_dir = temp_output_dir / "raw_items"
+    temp_fixture_dir.mkdir()
+    (temp_fixture_dir / "sample_item.html").write_text(fixture_path.read_text())
 
-    df_raw = read_item_table(fixture_path)
+    process_items(temp_fixture_dir, temp_output_dir)
 
-    if df_raw is not None:
-        df_promoted = promote_item_header(df_raw)
-        df_tidied = tidy_item_html(df_promoted)
-
-        if df_tidied is not None and not df_tidied.empty:
-            df_tidied.to_csv(output_csv, index=False)
-
-    assert output_csv.exists()
-    df = pd.read_csv(output_csv)
-    assert len(df) == 4
-    assert "Male" in df["Gender"].values
+    # Assert that the files exist and their content is as expected
+    df_csv = pd.read_csv(temp_output_dir / "items.csv")
+    assert len(df_csv) == 4
+    assert "Male" in df_csv["Gender"].values
+    assert (temp_output_dir / "items.feather").exists()
+    assert (temp_output_dir / "items.parquet").exists()
 
 def test_process_participants(temp_output_dir):
     fixture_path = Path("tests/fixtures/sample_participant.html")
-    output_csv = temp_output_dir / "participants.csv"
 
-    html_content = fixture_path.read_text(encoding="utf-8")
-    sio = io.StringIO(html_content)
-    tables = pd.read_html(sio, flavor=["lxml", "bs4"])
+    # Create a temporary directory for the fixture to simulate the input_dir for process_participants
+    temp_fixture_dir = temp_output_dir / "raw_participants"
+    temp_fixture_dir.mkdir()
+    (temp_fixture_dir / "sample_participant.html").write_text(fixture_path.read_text())
 
-    data_tbl = find_participant_table(tables, fixture_path.name)
+    process_participants(temp_fixture_dir, temp_output_dir)
 
-    if data_tbl is not None:
-        period = fixture_path.name.replace("sample_participant_", "").replace(".html", "")
-        long = data_tbl.melt(
-            id_vars=[data_tbl.columns[0]], var_name="state", value_name="count"
-        ).rename(columns={data_tbl.columns[0]: "cards"})
-
-        long["count"] = (
-            pd.to_numeric(
-                long["count"]
-                .astype(str)
-                .str.replace(",", "", regex=False)
-                .str.strip()
-                .replace({"", None}),
-                errors="coerce",
-            )
-            .round(0)
-            .astype("Int64")
-        )
-        long.insert(0, "period", period)
-        long.to_csv(output_csv, index=False)
-
-    assert output_csv.exists()
-    df = pd.read_csv(output_csv)
-    assert len(df) == 4 # 2 rows x 2 states
-    assert "nsw" in df["state"].values
+    # Assert that the files exist and their content is as expected
+    df_csv = pd.read_csv(temp_output_dir / "participants.csv")
+    assert len(df_csv) == 4 # 2 rows x 2 states
+    assert "nsw" in df_csv["state"].values
+    assert (temp_output_dir / "participants.feather").exists()
+    assert (temp_output_dir / "participants.parquet").exists()

@@ -1,9 +1,3 @@
-aiohttp
-aiofiles
 pandas
-tqdm
 lxml
-beautifulsoup4
-nest_asyncio
-openpyxl
-pytest
+requests
