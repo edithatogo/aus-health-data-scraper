@@ -33,7 +33,7 @@ logging.basicConfig(
 # ------------------------------------------------------------------
 
 STATES = {"nsw", "vic", "qld", "sa", "wa", "tas", "act", "nt"}
-MON_RE = re.compile(r"^[A-Z]{3}\d{4}$")
+MON_RE = re.compile(r"^[A-Z]{3}\d{4}$", re.IGNORECASE)
 FY_RE = re.compile(r"^\d{4}[-/]\d{2}$")
 STRIP = lambda s: re.sub(r"[\s\u00A0]+", "", str(s)).lower()
 
@@ -47,12 +47,10 @@ def read_item_table(path: Path) -> pd.DataFrame | None:
     Returns:
         A pandas DataFrame if a table is successfully read, otherwise None.
     """
-    for header in ([0, 1, 2], None):
-        try:
-            return pd.read_html(path, header=header, flavor="lxml")[0]
-        except ValueError:
-            continue
-    return None
+    try:
+        return pd.read_html(path, header=0, flavor="lxml")[0]
+    except ValueError:
+        return None
 
 def promote_item_header(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -98,14 +96,14 @@ def tidy_item_html(df_raw: pd.DataFrame) -> pd.DataFrame | None:
     if "Month" in cols:
         idc = ["Gender", "Age Range", "Month"]
         vc = [c for c in cols if STRIP(c) in STATES]
+        if not vc: return None
         df_long = df_raw.melt(
             id_vars=idc, value_vars=vc, var_name="State", value_name="value"
         ).rename(columns={"Month": "Period"})
     else:
-        idc = ["Gender", "Age Range", "State"]
+        idc = ["Gender", "Age Range"]
         vc = [c for c in cols if MON_RE.match(STRIP(c)) or FY_RE.match(STRIP(c))]
-        if not vc:
-            return None
+        if not vc: return None
         df_long = df_raw.melt(
             id_vars=idc, value_vars=vc, var_name="Period", value_name="value"
         )
