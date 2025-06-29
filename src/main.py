@@ -12,7 +12,12 @@ from scraper import scrape_items, scrape_participants, month_range
 from processor import process_items, process_participants
 
 def main():
-    """Main function to run the scraper and processor."""
+    """
+    Main function to orchestrate the scraping and processing of MBS data.
+
+    This function reads configuration, initiates the scraping of both item and
+    participant data, and then processes the raw HTML files into structured CSVs.
+    """
     # ------------------------------------------------------------------
     # 1️⃣  Configuration
     # ------------------------------------------------------------------

@@ -34,7 +34,16 @@ logging.basicConfig(
 # 3️⃣  Helpers
 # ------------------------------------------------------------------
 def month_range(start_yyymm: int, end_yyymm: int) -> list[str]:
-    """Generate YYYYMM strings from start to end inclusive."""
+    """
+    Generates a list of YYYYMM strings representing a range of months.
+
+    Args:
+        start_yyymm: The starting month in YYYYMM format (e.g., 199307 for July 1993).
+        end_yyymm: The ending month in YYYYMM format (e.g., 202504 for April 2025).
+
+    Returns:
+        A list of strings, where each string is a month in YYYYMM format.
+    """
     y, m = divmod(start_yyymm, 100)
     y_end, m_end = divmod(end_yyymm, 100)
     out = []
@@ -50,7 +59,15 @@ def month_range(start_yyymm: int, end_yyymm: int) -> list[str]:
 # ------------------------------------------------------------------
 
 async def fetch_one(session: aiohttp.ClientSession, url: str, out_path: Path) -> None:
-    """Download a single URL and write to disk (skip if cached)."""
+    """
+    Downloads a single URL and writes the content to a specified file path.
+    Skips download if the file already exists (cached).
+
+    Args:
+        session: An aiohttp client session for making HTTP requests.
+        url: The URL to download.
+        out_path: The Path object where the downloaded content will be saved.
+    """
     if out_path.exists():
         logging.info("SKIP  %s", out_path.name)
         return
@@ -73,7 +90,14 @@ async def fetch_one(session: aiohttp.ClientSession, url: str, out_path: Path) ->
     logging.info("OK    %s (%.0f KiB)", out_path.name, len(html) / 1024)
 
 async def scrape_items(item_numbers: list[int], months: list[str], output_dir: Path) -> None:
-    """Scrape MBS item data."""
+    """
+    Scrapes MBS item data for a given list of item numbers and months.
+
+    Args:
+        item_numbers: A list of integer MBS item numbers to scrape.
+        months: A list of YYYYMM strings representing the months to scrape data for.
+        output_dir: The directory where the scraped HTML files will be saved.
+    """
     logging.info("---- Starting MBS Item scrape ----")
     output_dir.mkdir(parents=True, exist_ok=True)
     url_tmpl = (
@@ -95,7 +119,13 @@ async def scrape_items(item_numbers: list[int], months: list[str], output_dir: P
     logging.info("---- Finished MBS Item scrape ----")
 
 async def scrape_participants(months: list[str], output_dir: Path) -> None:
-    """Scrape MBS participant data."""
+    """
+    Scrapes MBS participant data for a given list of months.
+
+    Args:
+        months: A list of YYYYMM strings representing the months to scrape data for.
+        output_dir: The directory where the scraped HTML files will be saved.
+    """
     logging.info("---- Starting MBS Participant scrape ----")
     output_dir.mkdir(parents=True, exist_ok=True)
     url_tmpl = (

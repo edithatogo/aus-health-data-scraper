@@ -37,7 +37,16 @@ MON_RE = re.compile(r"^[A-Z]{3}\d{4}$")
 FY_RE = re.compile(r"^\d{4}[-/]\d{2}$")
 STRIP = lambda s: re.sub(r"[\s\u00A0]+", "", str(s)).lower()
 
-def read_item_table(path: Path):
+def read_item_table(path: Path) -> pd.DataFrame | None:
+    """
+    Reads an HTML table from a given path, attempting different header configurations.
+
+    Args:
+        path: The Path object to the HTML file.
+
+    Returns:
+        A pandas DataFrame if a table is successfully read, otherwise None.
+    """
     for header in ([0, 1, 2], None):
         try:
             return pd.read_html(path, header=header, flavor="lxml")[0]
@@ -45,7 +54,18 @@ def read_item_table(path: Path):
             continue
     return None
 
-def promote_item_header(df: pd.DataFrame):
+def promote_item_header(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Promotes a row within the DataFrame to become the new header if it contains
+    'gender' and 'age range' in its cells.
+
+    Args:
+        df: The input pandas DataFrame.
+
+    Returns:
+        A new DataFrame with the promoted header and rows below it, or the original
+        DataFrame if no suitable header row is found.
+    """
     for i, row in df.iterrows():
         cells = [str(x).strip().lower() for x in row.tolist()]
         if "gender" in cells and "age range" in cells:
@@ -53,7 +73,16 @@ def promote_item_header(df: pd.DataFrame):
             return df.iloc[i + 1 :].reset_index(drop=True)
     return df
 
-def tidy_item_html(df_raw: pd.DataFrame):
+def tidy_item_html(df_raw: pd.DataFrame) -> pd.DataFrame | None:
+    """
+    Tidies a raw DataFrame extracted from an MBS item HTML page.
+
+    Args:
+        df_raw: The raw pandas DataFrame extracted from the HTML.
+
+    Returns:
+        A tidied pandas DataFrame, or None if the required columns are not found.
+    """
     if isinstance(df_raw.columns, pd.MultiIndex):
         df_raw.columns = [
             " ".join(str(x).strip() for x in tup if str(x).strip())
@@ -99,6 +128,14 @@ def tidy_item_html(df_raw: pd.DataFrame):
     return df_long
 
 def process_items(input_dir: Path, output_path: Path):
+    """
+    Processes all HTML files in the input directory to extract and tidy MBS item data.
+    Concatenates all processed data into a single DataFrame and saves it to a CSV file.
+
+    Args:
+        input_dir: The directory containing the raw MBS item HTML files.
+        output_path: The full path to the output CSV file for processed item data.
+    """
     logging.info("---- Starting Item processing ----")
     warnings.filterwarnings(
         "ignore",
@@ -143,6 +180,16 @@ def process_items(input_dir: Path, output_path: Path):
 # ------------------------------------------------------------------
 
 def find_participant_table(tables: list[pd.DataFrame], fname: str) -> pd.DataFrame | None:
+    """
+    Identifies the main data table from a list of DataFrames extracted from a participant HTML page.
+
+    Args:
+        tables: A list of pandas DataFrames extracted from an HTML page.
+        fname: The filename of the HTML page (for logging purposes).
+
+    Returns:
+        The DataFrame identified as the main data table, or None if not found.
+    """
     for idx, tbl in enumerate(tables):
         cols = list(tbl.columns)
         if len(cols) > 1 and "Number of cards with" in str(cols[0]):
@@ -151,6 +198,14 @@ def find_participant_table(tables: list[pd.DataFrame], fname: str) -> pd.DataFra
     return None
 
 def process_participants(input_dir: Path, output_path: Path):
+    """
+    Processes all HTML files in the input directory to extract and tidy MBS participant data.
+    Concatenates all processed data into a single DataFrame and saves it to a CSV file.
+
+    Args:
+        input_dir: The directory containing the raw MBS participant HTML files.
+        output_path: The full path to the output CSV file for processed participant data.
+    """
     logging.info("---- Starting Participant processing ----")
     all_long = []
     files = sorted(input_dir.glob("std_standard_report_*.html"))
