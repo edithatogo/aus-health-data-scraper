@@ -1,8 +1,13 @@
-# Automated MBS Data Scraper and Processor
+# Automated Health Data Scraper and Processor
 
-This project automates the scraping, processing, and analysis of Medicare Benefits Schedule (MBS) data from the official medicarestatistics.humanservices.gov.au website.
+This project automates the scraping, processing, and analysis of public health data from Australia's **Medicare Benefits Schedule (MBS)** and **Pharmaceutical Benefits Scheme (PBS)**.
 
-It is designed to be run automatically on a monthly schedule using GitHub Actions, ensuring the data is always up-to-date.
+The goal is to create a clean, unified, and analysis-ready dataset from these disparate sources. The entire pipeline is designed to be run automatically on a monthly schedule using GitHub Actions, ensuring the data is always up-to-date.
+
+## Data Sources
+
+-   **MBS (Medicare Benefits Schedule):** Data is sourced from the official [MBS XML files](https://www.mbsonline.gov.au/internet/mbsonline/publishing.nsf/Content/Downloads). This provides a catalogue of medical services subsidized by the Australian government.
+-   **PBS (Pharmaceutical Benefits Scheme):** Data is sourced from the [PBS XML data](https://info.data.pbs.gov.au/xml-schema/). This provides a catalogue of subsidized medicines.
 
 ## Project Structure
 
@@ -13,17 +18,13 @@ It is designed to be run automatically on a monthly schedule using GitHub Action
 │       └── monthly_run.yml
 ├── data/
 │   ├── processed/          # Final, cleaned datasets
-│   ├── raw/                # Raw HTML files from scraping
-│   │   ├── items/
-│   │   └── participants/
-│   └── source/               # Source files for the scraper
+│   ├── raw/                # Raw data files from scraping
+│   └── source/             # Source files for the scraper
 ├── src/                    # Python source code
-│   ├── scraper.py
-│   ├── processor.py
-│   └── main.py
+│   ├── scraper.py          # Scripts to download data
+│   ├── processor.py        # Scripts to clean and structure data
+│   └── main.py             # Main application entry point
 ├── tests/                  # Automated tests
-│   ├── fixtures/
-│   └── test_processor.py
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -44,10 +45,11 @@ It is designed to be run automatically on a monthly schedule using GitHub Action
     pip install -r requirements.txt
     ```
 
-3.  **Run the scraper and processor:**
+3.  **Run the application:**
     ```bash
     python src/main.py
     ```
+    This will initiate the full scraping and processing pipeline as defined in `src/main.py`.
 
 ## Automation
 

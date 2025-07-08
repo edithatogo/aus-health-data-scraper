@@ -1,42 +1,80 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains functions for scraping data from the MBS and PBS websites.
+"""
 import requests
-import os
+import asyncio
+from pathlib import Path
+from typing import List
 
-def scrape_html(url, output_dir):
+def month_range(start_month: int, end_month: int) -> List[int]:
     """
-    Fetches HTML content from a given URL and saves it to a specified directory.
+    Generates a list of months in YYYYMM format between a start and end month.
+
+    Args:
+        start_month: The starting month in YYYYMM format.
+        end_month: The ending month in YYYYMM format.
+
+    Returns:
+        A list of integers representing the months.
     """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+    months = []
+    current_year = start_month // 100
+    current_month = start_month % 100
+    end_year = end_month // 100
+    end_month_val = end_month % 100
 
-        # Extract filename from URL or use a default
-        filename = url.split('/')[-1]
-        if not filename or not filename.endswith('.html'):
-            filename = "index.html" # Default filename if not clear from URL
+    while (current_year * 100 + current_month) <= end_month:
+        months.append(current_year * 100 + current_month)
+        current_month += 1
+        if current_month > 12:
+            current_month = 1
+            current_year += 1
+    return months
 
-        filepath = os.path.join(output_dir, filename)
+async def scrape_items(item_numbers: List[str], item_months: List[int], output_dir: Path):
+    """
+    Scrapes MBS item data for a given list of item numbers and months.
 
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(response.text)
-        print(f"Successfully scraped {url} to {filepath}")
-        return filepath
-    except requests.exceptions.RequestException as e:
-        print(f"Error scraping {url}: {e}")
-        return None
+    Args:
+        item_numbers: A list of MBS item numbers to scrape.
+        item_months: A list of months to scrape data for.
+        output_dir: The directory to save the raw HTML files to.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for month in item_months:
+        for item_number in item_numbers:
+            url = f"https://www.mbsonline.gov.au/internet/mbsonline/publishing.nsf/Content/item{item_number}-{month}"
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                file_path = output_dir / f"item_{item_number}_{month}.html"
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+                print(f"Downloaded {url} to {file_path}")
+            except requests.exceptions.RequestException as e:
+                print(f"Error downloading {url}: {e}")
+            await asyncio.sleep(0.1) # Be polite to the server
 
-if __name__ == "__main__":
-    # Example usage (replace with actual URLs and output directory)
-    # This part will likely be driven by configuration or a main script
-    output_raw_dir = "data/raw"
-    os.makedirs(output_raw_dir, exist_ok=True)
 
-    # Placeholder URLs - these should be replaced with actual target URLs
-    # For a real project, these URLs would likely come from a configuration file
-    # or be passed as arguments.
-    target_urls = [
-        "http://example.com/page1.html",
-        "http://example.com/page2.html"
-    ]
+async def scrape_participants(participant_months: List[int], output_dir: Path):
+    """
+    Scrapes MBS participant data for a given list of months.
 
-    for url in target_urls:
-        scrape_html(url, output_raw_dir)
+    Args:
+        participant_months: A list of months to scrape data for.
+        output_dir: The directory to save the raw HTML files to.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for month in participant_months:
+        url = f"https://www.mbsonline.gov.au/internet/mbsonline/publishing.nsf/Content/participants-{month}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            file_path = output_dir / f"participants_{month}.html"
+            with open(file_path, "wb") as f:
+                f.write(response.content)
+            print(f"Downloaded {url} to {file_path}")
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading {url}: {e}")
+        await asyncio.sleep(0.1) # Be polite to the server

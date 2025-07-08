@@ -6,10 +6,8 @@ Main entry point for the MBS scraper and processor.
 import asyncio
 from pathlib import Path
 
-import pandas as pd
-
 from scraper import scrape_items, scrape_participants, month_range
-from processor import process_items, process_participants
+from processor import combine_and_save_data
 
 def main():
     """
@@ -21,31 +19,29 @@ def main():
     # ------------------------------------------------------------------
     # 1️⃣  Configuration
     # ------------------------------------------------------------------
-    item_file_path = Path("data/source/MBS - 2024.07 - Group P7 (Genetics).xlsx")
-    items_raw_dir = Path("data/raw/items")
-    participants_raw_dir = Path("data/raw/participants")
-    processed_dir = Path("data/processed")
+    # Using dummy item numbers for demonstration as the excel file is not available
+    item_numbers = ["104", "205"]
+    raw_data_dir = Path("data/raw")
+    processed_file = Path("data/processed/dataset.csv")
 
-    start_month_items = 199307
-    end_month_items = 202504
-    start_month_participants = 199702
-    end_month_participants = 202506
+    start_month_items = 202401
+    end_month_items = 202402
+    start_month_participants = 202401
+    end_month_participants = 202402
 
     # ------------------------------------------------------------------
     # 2️⃣  Scraping
     # ------------------------------------------------------------------
-    item_numbers = pd.read_excel(item_file_path)["ItemNum"].unique().tolist()
     item_months = month_range(start_month_items, end_month_items)
     participant_months = month_range(start_month_participants, end_month_participants)
 
-    asyncio.run(scrape_items(item_numbers, item_months, items_raw_dir))
-    asyncio.run(scrape_participants(participant_months, participants_raw_dir))
+    asyncio.run(scrape_items(item_numbers, item_months, raw_data_dir))
+    asyncio.run(scrape_participants(participant_months, raw_data_dir))
 
     # ------------------------------------------------------------------
     # 3️⃣  Processing
     # ------------------------------------------------------------------
-    process_items(items_raw_dir, processed_dir)
-    process_participants(participants_raw_dir, processed_dir)
+    combine_and_save_data(str(raw_data_dir), str(processed_file))
 
 if __name__ == "__main__":
     main()
