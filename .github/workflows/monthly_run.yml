@@ -48,15 +48,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run scraper and processor
-        run: |
-          python src/scraper.py
-          python src/processor.py
+      - name: Run main script
+        run: python src/main.py
 
       - name: Commit data
         run: |
           git config user.name github-actions[bot]
           git config user.email github-actions[bot]@users.noreply.github.com
-          git add data/raw/ data/processed/
-          git commit -m "Automated data update" || echo "No changes to commit"
+          git add data/
+          git commit -m "feat(data): Automated daily data update" || echo "No changes to commit"
           git push
