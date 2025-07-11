@@ -35,4 +35,4 @@ data/processed/*
 !data/processed/.gitkeep
 
 # Specific to this project
-*.xlsx
+*.xlsx.DS_Store

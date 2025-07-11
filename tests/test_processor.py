@@ -1,43 +1,64 @@
-import pytest
 from pathlib import Path
-import pandas as pd
-import os
-from src.processor import combine_and_save_data
+import tempfile
+import shutil
+import pytest
+from src.processor import combine_and_save_data, process_mbs_xml
 
 @pytest.fixture
-def temp_dirs(tmp_path):
-    raw_dir = tmp_path / "data" / "raw"
-    processed_dir = tmp_path / "data" / "processed"
-    raw_dir.mkdir(parents=True, exist_ok=True)
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    return raw_dir, processed_dir
+def temp_data_dirs():
+    # Create a temporary directory
+    temp_dir = tempfile.mkdtemp()
+    raw_dir = Path(temp_dir) / "raw"
+    processed_dir = Path(temp_dir) / "processed"
+    raw_dir.mkdir()
+    processed_dir.mkdir()
+    yield raw_dir, processed_dir
+    # Clean up the temporary directory
+    shutil.rmtree(temp_dir)
 
-def test_combine_and_save_data(temp_dirs):
-    raw_dir, processed_dir = temp_dirs
-    output_filepath = processed_dir / "dataset.csv"
+import pandas as pd
 
-    # Copy sample HTML files to the temporary raw directory
-    sample_item_path = Path("tests/fixtures/sample_item.html")
-    sample_participant_path = Path("tests/fixtures/sample_participant.html")
+def test_combine_and_save_data(temp_data_dirs):
+    raw_dir, processed_dir = temp_data_dirs
+    fixtures_dir = Path("tests/fixtures")
+
+    # Copy sample files to the temporary raw directory
+    shutil.copy(fixtures_dir / "sample_item.html", raw_dir)
+    shutil.copy(fixtures_dir / "sample_participant.html", raw_dir)
+    shutil.copy(fixtures_dir / "sample_mbs.xml", raw_dir)
+
+    # Run the processor
+    combine_and_save_data(raw_dir, processed_dir)
+
+    # Check that the output file was created and is not empty
+    output_file = processed_dir / "dataset.csv"
+    assert output_file.exists()
+    assert output_file.stat().st_size > 0
+
+    # Check the content of the CSV
+    df = pd.read_csv(output_file)
+    # Expect 3 rows from sample_item, 1 from sample_participant, and 1 from sample_mbs
+    assert len(df) == 5
+    # Check for a key column from the XML data
+    assert "ItemNum" in df.columns
+    # Check for a key column from the HTML data (assuming column names are parsed)
+    # Note: Column names from HTML tables can be unpredictable. A better check
+    # might be to inspect the values. For now, we'll check for a known value.
+    assert "Male" in df.to_string() # Check if a known value exists
+    assert "73329" in df["ItemNum"].to_string() # Check for the MBS item number
+
+def test_process_mbs_xml():
+    """
+    Tests that the process_mbs_xml function correctly parses P7 items.
+    """
+    fixture_path = Path("tests/fixtures/sample_mbs.xml")
+    p7_items = process_mbs_xml(fixture_path)
     
-    (raw_dir / "sample_item.html").write_bytes(sample_item_path.read_bytes())
-    (raw_dir / "sample_participant.html").write_bytes(sample_participant_path.read_bytes())
-
-    # Run the main processing function
-    combine_and_save_data(str(raw_dir), str(output_filepath))
-
-    # Assert that the output CSV file exists
-    assert output_filepath.exists()
-
-    # Read the generated CSV and perform basic assertions on its content
-    df = pd.read_csv(output_filepath)
+    # There is one "P7" item in the sample file
+    assert len(p7_items) == 1
     
-    # The exact assertions will depend on the content of your sample HTML files
-    # and how combine_and_save_data processes them. 
-    # For now, let's check if the DataFrame is not empty.
-    assert not df.empty
-    
-    # You might want to add more specific assertions here based on your expected output
-    # For example:
-    # assert len(df) > 0
-    # assert "ExpectedColumnName" in df.columns
+    # Check that the extracted item has the correct data
+    item = p7_items[0]
+    assert item["ItemNum"] == "73329"
+    assert item["Group"] == "P7"
+    assert item["Category"] == "6"

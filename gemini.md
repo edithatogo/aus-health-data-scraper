@@ -1,6 +1,6 @@
-# Project: Automated HTML Scraper and Data Processor
+# Project: Automated HTML and XML Scraper and Data Processor
 
-This project automates the process of scraping HTML files, extracting and cleaning tabular data, and generating a combined, long-form dataset. The entire process is designed to be run automatically on a monthly schedule using GitHub Actions.
+This project automates the process of scraping HTML and XML files, extracting and cleaning tabular data, and generating a combined, long-form dataset. The entire process is designed to be run automatically on a monthly schedule using GitHub Actions.
 
 ## Project Structure
 
@@ -14,12 +14,12 @@ The project will be organized into the following directory structure:
 ├── data/
 │   ├── processed/         # Stores the final, cleaned dataset
 │   │   └── .gitkeep
-│   └── raw/               # Stores the raw HTML files from scraping
+│   └── raw/               # Stores the raw HTML and XML files from scraping
 │       └── .gitkeep
 ├── src/
 │   ├── main.py            # Main entry point for the application
-│   ├── scraper.py         # Script to scrape and download HTML files
-│   └── processor.py       # Script to process HTML files and generate the dataset
+│   ├── scraper.py         # Script to scrape and download files
+│   └── processor.py       # Script to process files and generate the dataset
 ├── tests/
 │   ├── test_processor.py  # Tests for the data processor
 │   └── fixtures/          # Test fixtures
@@ -39,20 +39,21 @@ The project will be organized into the following directory structure:
 
 ### `src/scraper.py`
 
--   **Purpose:** Fetches and saves the target HTML files.
+-   **Purpose:** Fetches and saves the target HTML and XML files.
 -   **Logic:**
-    -   Uses the `requests` library to download HTML content from specified URLs.
-    -   Saves the raw HTML files into the `data/raw/` directory.
+    -   Uses the `requests` library to download content from specified URLs.
+    -   Saves the raw files into the `data/raw/` directory.
     -   Called by `src/main.py`.
 
 ### `src/processor.py`
 
--   **Purpose:** Extracts, cleans, and transforms data from the raw HTML files.
+-   **Purpose:** Extracts, cleans, and transforms data from the raw HTML and XML files.
 -   **Logic:**
-    -   Reads each HTML file from the `data/raw/` directory.
-    -   Uses `lxml` to parse the HTML and `pandas` to read HTML tables.
-    -   Cleans and transforms the extracted tables.
-    -   Joins the tables into a single, long-form DataFrame.
+    -   Reads each file from the `data/raw/` directory.
+    -   Uses `lxml` and `pandas` to parse and read HTML tables.
+    -   Uses `xml.etree.ElementTree` to parse XML files.
+    -   Cleans and transforms the extracted data.
+    -   Joins the data into a single, long-form DataFrame.
     -   Saves the final dataset to `data/processed/dataset.csv`.
     -   Called by `src/main.py`.
 
@@ -85,4 +86,9 @@ A standard Python `.gitignore` file will be created to ignore files like `__pyca
 The `tests/` directory contains unit tests for the project. The tests are written using the `pytest` framework.
 
 -   `tests/test_processor.py`: Contains tests for the data processing logic in `src/processor.py`.
--   `tests/fixtures/`: Contains sample HTML files used as test data.
+-   `tests/fixtures/`: Contains sample HTML and XML files used as test data.
+
+## API Usage and Rate Limiting
+- When using the free tier of the Gemini API (via OAuth or a standard API key), be mindful of the rate limits (e.g., 60 requests per minute).
+- For tasks requiring higher throughput, consider switching to a Vertex AI-backed project, which offers significantly higher rate limits and enterprise-grade reliability.
+- If you encounter rate-limiting errors, pause your operations and inform the user.

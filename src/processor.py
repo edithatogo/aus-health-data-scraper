@@ -1,7 +1,82 @@
 import pandas as pd
-from lxml import html
-import os
+from pathlib import Path
+import xml.etree.ElementTree as ET
 import glob
+import os
+
+def process_mbs_xml(file_path: Path) -> list[dict]:
+    """
+    Parses an MBS XML file and extracts all items belonging to the "P7" group.
+
+    Args:
+        file_path: The path to the MBS XML file.
+
+    Returns:
+        A list of dictionaries, where each dictionary represents a "P7" item.
+    """
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+    
+    p7_items = []
+    for item in root.findall("./item"):
+        group = item.find("Group")
+        if group is not None and group.text == "P7":
+            item_data = {}
+            for child in item:
+                item_data[child.tag] = child.text
+            p7_items.append(item_data)
+            
+    return p7_items
+
+def combine_and_save_data(raw_data_dir: Path, processed_data_dir: Path):
+    """Processes all HTML and XML files in a directory, combines the data, and saves to CSV.
+
+    This function iterates through all `.html`, `.htm`, and `.xml` files in the
+    specified input directory. It calls the appropriate processing function
+    for each file type, concatenates all the extracted data into a single
+    DataFrame, and saves it as a CSV file.
+
+    Args:
+        raw_data_dir: The path to the directory containing the raw data files.
+        processed_data_dir: The path where the final combined CSV file will be saved.
+    """
+    all_dataframes = []
+    # Use glob to find all supported files
+    file_paths = glob.glob(os.path.join(raw_data_dir, "*.html")) + \
+                 glob.glob(os.path.join(raw_data_dir, "*.htm")) + \
+                 glob.glob(os.path.join(raw_data_dir, "*.xml"))
+
+    if not file_paths:
+        print(f"No HTML or XML files found in {raw_data_dir}. Skipping processing.")
+        return
+
+    print(f"Processing {len(file_paths)} files from {raw_data_dir}...")
+    for filepath in file_paths:
+        file_path_obj = Path(filepath)
+        print(f"Processing file: {file_path_obj.name}")
+        if file_path_obj.suffix in ['.html', '.htm']:
+            tables = process_html_file(filepath)
+            all_dataframes.extend(tables)
+        elif file_path_obj.suffix == '.xml':
+            xml_data = process_mbs_xml(file_path_obj)
+            if xml_data:
+                df = pd.DataFrame(xml_data)
+                all_dataframes.append(df)
+                print(f"  - Extracted {len(df)} items from {file_path_obj.name}")
+
+    if all_dataframes:
+        # Concatenate all dataframes. `ignore_index=True` creates a new index.
+        combined_df = pd.concat(all_dataframes, ignore_index=True)
+
+        # Ensure the output directory exists before saving
+        processed_data_dir.mkdir(parents=True, exist_ok=True)
+        output_filepath = processed_data_dir / "dataset.csv"
+
+        combined_df.to_csv(output_filepath, index=False)
+        print(f"Successfully combined and saved data to {output_filepath}")
+    else:
+        print("No data was extracted from the files. No CSV file was generated.")
+
 
 def process_html_file(filepath: str) -> list[pd.DataFrame]:
     """Reads a single HTML file, extracts all tables, and cleans them.
@@ -37,49 +112,3 @@ def process_html_file(filepath: str) -> list[pd.DataFrame]:
     except Exception as e:
         print(f"Error processing {filepath}: {e}")
         return []
-
-def combine_and_save_data(input_dir: str, output_filepath: str):
-    """Processes all HTML files in a directory, combines the data, and saves to CSV.
-
-    This function iterates through all `.html` files in the specified input
-    directory. It calls `process_html_file` for each file, concatenates all
-    the extracted tables into a single DataFrame, and saves it as a CSV file.
-
-    Args:
-        input_dir: The path to the directory containing the raw HTML files.
-        output_filepath: The path where the final combined CSV file will be saved.
-    """
-    all_dataframes = []
-    # Use glob to find all HTML files, supporting various extensions
-    html_files = glob.glob(os.path.join(input_dir, "*.html")) + \
-                 glob.glob(os.path.join(input_dir, "*.htm"))
-
-    if not html_files:
-        print(f"No HTML files found in {input_dir}. Skipping processing.")
-        return
-
-    print(f"Processing {len(html_files)} HTML files from {input_dir}...")
-    for filepath in html_files:
-        print(f"Processing file: {os.path.basename(filepath)}")
-        tables = process_html_file(filepath)
-        # Extend the list of dataframes with the tables from the current file
-        all_dataframes.extend(tables)
-
-    if all_dataframes:
-        # Concatenate all dataframes. `ignore_index=True` creates a new index.
-        combined_df = pd.concat(all_dataframes, ignore_index=True)
-
-        # Ensure the output directory exists before saving
-        output_dir = os.path.dirname(output_filepath)
-        os.makedirs(output_dir, exist_ok=True)
-
-        combined_df.to_csv(output_filepath, index=False)
-        print(f"Successfully combined and saved data to {output_filepath}")
-    else:
-        print("No data was extracted from the HTML files. No CSV file was generated.")
-
-if __name__ == "__main__":
-    input_raw_dir = "data/raw"
-    output_processed_file = "data/processed/dataset.csv"
-    
-    combine_and_save_data(input_raw_dir, output_processed_file)
