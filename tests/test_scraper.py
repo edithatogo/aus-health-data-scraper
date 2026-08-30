@@ -3,6 +3,7 @@
 import asyncio
 
 import requests
+
 from src.scraper import scrape_items, scrape_participants
 
 
