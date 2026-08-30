@@ -2,6 +2,7 @@ from pathlib import Path
 import tempfile
 import shutil
 import pytest
+import pandas as pd
 from src.processor import combine_and_save_data, process_mbs_xml
 
 @pytest.fixture
@@ -16,7 +17,6 @@ def temp_data_dirs():
     # Clean up the temporary directory
     shutil.rmtree(temp_dir)
 
-import pandas as pd
 
 def test_combine_and_save_data(temp_data_dirs):
     raw_dir, processed_dir = temp_data_dirs
