@@ -22,8 +22,8 @@ jobs:
     - name: Lint with ruff
       run: |
         pip install ruff
-        just lint
+        python -m ruff check src tests
     - name: Test with pytest
       run: |
         pip install pytest
-        just test
+        PYTHONPATH=. python -m pytest -q
