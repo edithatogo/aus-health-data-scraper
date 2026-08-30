@@ -21,8 +21,6 @@ def month_range(start_month: int, end_month: int) -> List[int]:
     months = []
     current_year = start_month // 100
     current_month = start_month % 100
-    end_year = end_month // 100
-    end_month_val = end_month % 100
 
     while (current_year * 100 + current_month) <= end_month:
         months.append(current_year * 100 + current_month)
