@@ -1,9 +1,11 @@
-from pathlib import Path
-import tempfile
 import shutil
-import pytest
+import tempfile
+from pathlib import Path
+
 import pandas as pd
+import pytest
 from src.processor import combine_and_save_data, process_mbs_xml
+
 
 @pytest.fixture
 def temp_data_dirs():
