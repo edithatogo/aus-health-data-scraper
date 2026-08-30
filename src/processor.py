@@ -1,8 +1,11 @@
-import pandas as pd
-from pathlib import Path
-import xml.etree.ElementTree as ET
 import glob
 import os
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import pandas as pd
+from lxml.etree import ParserError, XMLSyntaxError
+
 
 def process_mbs_xml(file_path: Path) -> list[dict]:
     """
@@ -109,6 +112,6 @@ def process_html_file(filepath: str) -> list[pd.DataFrame]:
                 cleaned_tables.append(df_cleaned)
                 print(f"  - Extracted and cleaned table {i+1} from {os.path.basename(filepath)}")
         return cleaned_tables
-    except Exception as e:
+    except (ValueError, OSError, ParserError, XMLSyntaxError) as e:
         print(f"Error processing {filepath}: {e}")
         return []

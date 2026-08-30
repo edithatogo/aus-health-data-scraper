@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Main entry point for the MBS scraper and processor.
 """
@@ -6,8 +5,9 @@ Main entry point for the MBS scraper and processor.
 import asyncio
 from pathlib import Path
 
-from scraper import scrape_items, scrape_participants, month_range
 from processor import combine_and_save_data
+from scraper import month_range, scrape_items, scrape_participants
+
 
 def main():
     """

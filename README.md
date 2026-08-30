@@ -1,3 +1,6 @@
+> **Successor development:** See [the GMA compatibility notice](SUCCESSOR.md).
+> Consolidation is in progress; this repository remains unarchived.
+
 # Automated Health Data Scraper and Processor
 
 This project automates the scraping, processing, and analysis of public health data from Australia's **Medicare Benefits Schedule (MBS)** and **Pharmaceutical Benefits Scheme (PBS)**.
